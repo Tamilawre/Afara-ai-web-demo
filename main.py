@@ -41,7 +41,7 @@ st.markdown(
     """
     <div class="afara-header">
         <p class="afara-logo">Afara</p>
-        <p class="afara-tagline">Bridging language, one word at a time</p>
+        <p class="afara-tagline">Bridging the Gap Between Students and Indegeneous Ekiti Speakers</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -66,7 +66,7 @@ def transcribe_with_hf_space(audio_path: str) -> str:
 # ── Translate tab ────────────────────────────────────────────────────────
 if st.session_state.active_tab == "translate":
     st.markdown(
-        '<div class="afara-pill"><span>🎙️ Yoruba → Text</span></div>',
+        '<div class="afara-pill"><span>🎙️ Transcribe</span></div>',
         unsafe_allow_html=True,
     )
 
