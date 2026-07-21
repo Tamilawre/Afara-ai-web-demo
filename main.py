@@ -14,7 +14,7 @@ import os
 from GLOBAL_STYLES import GLOBAL_STYLES
 from RECORDER import RECORDER_HTML
 from AI_ORB import AI_ORB_HTML
-# from ASR import transcribe_audio 
+# from ASR import transcribe_audio
 from gradio_client import Client, handle_file
 
 # ── Page setup ────────────────────────────────────────────────────────────
@@ -34,7 +34,6 @@ st.markdown(
     GLOBAL_STYLES,
     unsafe_allow_html=True,
 )
-
 
 # ── Header ───────────────────────────────────────────────────────────────
 st.markdown(
@@ -58,9 +57,34 @@ def transcribe_with_hf_space(audio_path: str) -> str:
     client = Client(HF_SPACE_ID)
     result = client.predict(
         handle_file(audio_path),
-        api_name="/predict",  # adjust to match the Space's actual endpoint name
+        api_name="/transcribe_audio",  # adjust to match the Space's actual endpoint name
     )
     return result
+
+
+# ── Transcription dialog ─────────────────────────────────────────────────
+# NOTE: this must be called on EVERY rerun while it should stay open.
+# Streamlit only keeps a dialog open across reruns that originate from
+# widgets *inside* the dialog itself; any full-script rerun triggered from
+# outside it (e.g. the recorder iframe posting another value) will close
+# the dialog unless the decorated function is invoked again that run.
+@st.dialog("Translation")
+def show_result_modal():
+    if st.session_state.transcription_error:
+        st.error(
+            f"Couldn't reach the transcription service: {st.session_state.transcription_error}"
+        )
+    else:
+        st.markdown(
+            f"""
+            <div class="transcript-label">Yoruba Transcription</div>
+            <div class="transcript-text">{st.session_state.transcription_text}</div>
+            """,
+            unsafe_allow_html=True,
+        )
+    if st.button("Close"):
+        st.session_state.show_transcription_dialog = False
+        st.rerun()
 
 
 # ── Translate tab ────────────────────────────────────────────────────────
@@ -83,26 +107,14 @@ if st.session_state.active_tab == "translate":
 
     if "last_processed_audio" not in st.session_state:
         st.session_state.last_processed_audio = ""
+    if "transcription_text" not in st.session_state:
+        st.session_state.transcription_text = None
+    if "transcription_error" not in st.session_state:
+        st.session_state.transcription_error = None
+    if "show_transcription_dialog" not in st.session_state:
+        st.session_state.show_transcription_dialog = False
 
-    @st.dialog("Translation")
-    def show_result_modal(audio_path: str):
-        with st.spinner("Transcribing..."):
-            try:
-                transcription = transcribe_with_hf_space(audio_path) # transcribe_audio(audio_path)
-                st.markdown(
-                    f"""
-                    <div class="transcript-label">Yoruba Transcription</div>
-                    <div class="transcript-text">{transcription}</div>
-                    """,
-                    unsafe_allow_html=True,
-                )
-            except Exception as e:
-                print(f"[Afara] Transcription request failed: {e}", file=sys.stderr)
-                traceback.print_exc()
-                st.error(f"Couldn't reach the transcription service: {e}")
-            finally:
-                os.remove(audio_path)
-
+    # Kick off a new transcription only when genuinely new audio arrives.
     if audio_b64_value and audio_b64_value != st.session_state.last_processed_audio:
         st.session_state.last_processed_audio = audio_b64_value
 
@@ -111,7 +123,23 @@ if st.session_state.active_tab == "translate":
             tmp_file.write(audio_bytes)
             tmp_path = tmp_file.name
 
-        show_result_modal(tmp_path)
+        with st.spinner("Transcribing..."):
+            try:
+                st.session_state.transcription_text = transcribe_with_hf_space(tmp_path)
+                st.session_state.transcription_error = None
+            except Exception as e:
+                print(f"[Afara] Transcription request failed: {e}", file=sys.stderr)
+                traceback.print_exc()
+                st.session_state.transcription_error = str(e)
+            finally:
+                os.remove(tmp_path)
+
+        st.session_state.show_transcription_dialog = True
+
+    # Re-invoke the dialog on every rerun as long as it should stay open —
+    # this is the line that actually keeps it visible.
+    if st.session_state.show_transcription_dialog:
+        show_result_modal()
 
 # ── AI tab: voice assistant orb ──────────────────────────────────────────
 elif st.session_state.active_tab == "ai":
