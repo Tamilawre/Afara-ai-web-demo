@@ -1,12 +1,9 @@
-[tool.poetry]
-name = "afara-ai-web-ui"
+[project]
+name = "afara-ai-web-demo"
 version = "0.1.0"
-description = "Add your description here"
-package-mode = false
-
-[tool.poetry.dependencies]
-python = "^3.13"
-
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires-python = ">=3.10"
+dependencies = [
+    "streamlit",
+    "gradio_client",
+    "librosa",
+]
