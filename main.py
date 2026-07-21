@@ -14,6 +14,7 @@ import os
 from GLOBAL_STYLES import GLOBAL_STYLES
 from RECORDER import RECORDER_HTML
 from AI_ORB import AI_ORB_HTML
+# from ASR import transcribe_audio 
 from gradio_client import Client, handle_file
 
 # ── Page setup ────────────────────────────────────────────────────────────
@@ -26,8 +27,7 @@ st.set_page_config(
 
 # ── Config ───────────────────────────────────────────────────────────────
 # Replace with your actual Hugging Face Space repo id, e.g. "username/space-name"
-HF_SPACE_ID = "your-username/whisper-yoruba-space"
-
+HF_SPACE_ID = "LawsonE/YorubaASR"
 
 # ── Global styling ───────────────────────────────────────────────────────
 st.markdown(
@@ -88,7 +88,7 @@ if st.session_state.active_tab == "translate":
     def show_result_modal(audio_path: str):
         with st.spinner("Transcribing..."):
             try:
-                transcription = transcribe_with_hf_space(audio_path)
+                transcription = transcribe_with_hf_space(audio_path) # transcribe_audio(audio_path)
                 st.markdown(
                     f"""
                     <div class="transcript-label">Yoruba Transcription</div>
