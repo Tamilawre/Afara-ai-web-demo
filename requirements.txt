@@ -2,3 +2,4 @@
 #    uv export --format requirements-txt --no-dev --output-file requirements.txt
 streamlit
 gradio_client
+
